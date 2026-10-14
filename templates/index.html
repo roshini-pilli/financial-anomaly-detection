@@ -1,0 +1,405 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fraud Detection Dashboard</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #f3f6f9;
+            color: #182230;
+        }
+
+        header {
+            background: #12372a;
+            color: white;
+            padding: 24px 7%;
+        }
+
+        header h1 {
+            font-size: 25px;
+            margin-bottom: 8px;
+        }
+
+        header p {
+            color: #d0e5da;
+            font-size: 14px;
+        }
+
+        main {
+            max-width: 1050px;
+            margin: 32px auto;
+            padding: 0 20px;
+        }
+
+        .notice {
+            padding: 13px 16px;
+            border-radius: 8px;
+            background: #e7f2ec;
+            color: #24563c;
+            font-size: 13px;
+            margin-bottom: 22px;
+            line-height: 1.5;
+        }
+
+        .layout {
+            display: grid;
+            grid-template-columns: 1.2fr 0.8fr;
+            gap: 22px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 14px;
+            padding: 25px;
+            box-shadow: 0 4px 18px #172b3a0b;
+            border: 1px solid #e7ebef;
+        }
+
+        h2 {
+            font-size: 19px;
+            margin-bottom: 8px;
+        }
+
+        .sub {
+            color: #667085;
+            font-size: 13px;
+            line-height: 1.6;
+            margin-bottom: 23px;
+        }
+
+        .fields {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 7px;
+        }
+
+        input {
+            width: 100%;
+            border: 1px solid #d0d5dd;
+            border-radius: 7px;
+            padding: 11px;
+            font-size: 14px;
+            outline: none;
+        }
+
+        input:focus {
+            border-color: #26835a;
+            box-shadow: 0 0 0 3px #26835a18;
+        }
+
+        button {
+            width: 100%;
+            margin-top: 23px;
+            background: #187447;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 13px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #125b37;
+        }
+
+        button:disabled {
+            opacity: 0.65;
+            cursor: wait;
+        }
+
+        .result {
+            text-align: center;
+            padding: 22px 10px;
+        }
+
+        .icon {
+            width: 65px;
+            height: 65px;
+            display: grid;
+            place-items: center;
+            margin: 5px auto 17px;
+            border-radius: 50%;
+            background: #edf2f7;
+            font-size: 28px;
+        }
+
+        .result h3 {
+            font-size: 22px;
+            margin-bottom: 10px;
+        }
+
+        .result p {
+            font-size: 13px;
+            line-height: 1.6;
+            color: #667085;
+        }
+
+        .probability {
+            margin: 27px 0 10px;
+            font-size: 34px;
+            font-weight: 700;
+        }
+
+        .bar {
+            height: 9px;
+            border-radius: 10px;
+            background: #edf0f3;
+            overflow: hidden;
+            margin: 14px 0 25px;
+        }
+
+        .fill {
+            height: 100%;
+            width: 0;
+            background: #187447;
+            transition: width 0.3s;
+        }
+
+        .meta {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            padding: 13px 0;
+            border-top: 1px solid #edf0f3;
+            font-size: 13px;
+        }
+
+        .meta span {
+            color: #667085;
+        }
+
+        .error {
+            color: #b42318 !important;
+            margin-top: 12px;
+        }
+
+        .fraud .icon {
+            background: #fee4e2;
+            color: #b42318;
+        }
+
+        .fraud h3 {
+            color: #b42318;
+        }
+
+        .legitimate .icon {
+            background: #dcfae6;
+            color: #067647;
+        }
+
+        .legitimate h3 {
+            color: #067647;
+        }
+
+        footer {
+            text-align: center;
+            padding: 25px 15px;
+            color: #667085;
+            font-size: 12px;
+        }
+
+        @media (max-width: 720px) {
+            .layout {
+                grid-template-columns: 1fr;
+            }
+
+            .fields {
+                grid-template-columns: 1fr;
+            }
+
+            header {
+                padding: 22px 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Financial Transaction Monitor</h1>
+        <p>Machine learning powered transaction risk analysis</p>
+    </header>
+
+    <main>
+        <div class="notice">
+            Demo application using a trained Random Forest model.
+            Predictions are estimates, not proof that a transaction is safe or fraudulent.
+            Enter all 30 model features for each prediction.
+        </div>
+
+        <div class="layout">
+            <section class="card">
+                <h2>Analyze a transaction</h2>
+                <p class="sub">
+                    Enter the transaction amount, time and anonymized
+                    PCA features V1–V28 used by the trained model.
+                </p>
+
+                <form id="form">
+                    <div class="fields" id="fields"></div>
+                    <button type="submit" id="submit">Check Transaction</button>
+                    <p id="error" class="error" role="alert"></p>
+                </form>
+            </section>
+
+            <section class="card">
+                <h2>Analysis result</h2>
+                <p class="sub">The model's prediction for your submitted input.</p>
+
+                <div class="result" id="result">
+                    <div class="icon" id="icon">↗</div>
+                    <h3 id="status">Awaiting transaction</h3>
+                    <p id="description">
+                        Fill in the transaction features and select Check Transaction.
+                    </p>
+
+                    <div class="probability" id="probability">—</div>
+                    <p>Estimated fraud probability</p>
+                    <div class="bar">
+                        <div class="fill" id="fill"></div>
+                    </div>
+
+                    <div class="meta">
+                        <span>Decision threshold</span>
+                        <strong id="threshold">Loaded after analysis</strong>
+                    </div>
+                    <div class="meta">
+                        <span>Model</span>
+                        <strong>Random Forest</strong>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <footer>
+        Academic machine learning project · Use synthetic data for demonstrations
+    </footer>
+
+    <script>
+        const fieldNames = [
+            "Time",
+            ...Array.from({ length: 28 }, (_, i) => `V${i + 1}`),
+            "Amount"
+        ];
+
+        const fields = document.getElementById("fields");
+
+        fieldNames.forEach(name => {
+            const wrapper = document.createElement("div");
+            const label = document.createElement("label");
+            const input = document.createElement("input");
+
+            label.htmlFor = name;
+            label.textContent = name;
+            input.id = name;
+            input.name = name;
+            input.type = "number";
+            input.step = "any";
+            input.required = true;
+            input.value = "0";
+
+            if (name === "Amount") {
+                input.value = "100";
+                label.textContent = "Amount";
+            }
+
+            wrapper.append(label, input);
+            fields.appendChild(wrapper);
+        });
+
+        const form = document.getElementById("form");
+        const submit = document.getElementById("submit");
+        const error = document.getElementById("error");
+
+        form.addEventListener("submit", async event => {
+            event.preventDefault();
+            error.textContent = "";
+            submit.disabled = true;
+            submit.textContent = "Analyzing...";
+
+            const data = {};
+
+            for (const name of fieldNames) {
+                const value = document.getElementById(name).value;
+
+                if (value.trim() === "" || !Number.isFinite(Number(value))) {
+                    error.textContent = `Enter a valid number for ${name}.`;
+                    submit.disabled = false;
+                    submit.textContent = "Check Transaction";
+                    return;
+                }
+
+                data[name] = Number(value);
+            }
+
+            try {
+                const response = await fetch("/predict", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(result.error || "Prediction failed.");
+                }
+
+                const isFraud = result.prediction === 1;
+                const probability = result.fraud_probability * 100;
+
+                document.getElementById("result").className =
+                    `result ${isFraud ? "fraud" : "legitimate"}`;
+
+                document.getElementById("icon").textContent =
+                    isFraud ? "!" : "✓";
+
+                document.getElementById("status").textContent = result.result;
+
+                document.getElementById("description").textContent =
+                    isFraud
+                    ? "The model flagged this transaction for further review."
+                    : "The model did not flag this transaction at the selected threshold.";
+
+                document.getElementById("probability").textContent =
+                    `${probability.toFixed(4)}%`;
+
+                document.getElementById("fill").style.width =
+                    `${Math.max(0, Math.min(100, probability))}%`;
+
+                document.getElementById("fill").style.background =
+                    isFraud ? "#d92d20" : "#187447";
+
+                document.getElementById("threshold").textContent =
+                    `${(result.threshold * 100).toFixed(1)}%`;
+            } catch (err) {
+                error.textContent = err.message ||
+                    "Could not connect to the prediction API.";
+            } finally {
+                submit.disabled = false;
+                submit.textContent = "Check Transaction";
+            }
+        });
+    </script>
+</body>
+</html>
