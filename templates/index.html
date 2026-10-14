@@ -62,6 +62,7 @@
             padding: 25px;
             box-shadow: 0 4px 18px #172b3a0b;
             border: 1px solid #e7ebef;
+            min-width: 0;
         }
 
         h2 {
@@ -156,6 +157,7 @@
             margin: 27px 0 10px;
             font-size: 34px;
             font-weight: 700;
+            overflow-wrap: anywhere;
         }
 
         .bar {
@@ -180,15 +182,32 @@
             padding: 13px 0;
             border-top: 1px solid #edf0f3;
             font-size: 13px;
+            text-align: left;
         }
 
         .meta span {
             color: #667085;
         }
 
+        .meta strong {
+            text-align: right;
+            overflow-wrap: anywhere;
+        }
+
         .error {
             color: #b42318 !important;
             margin-top: 12px;
+        }
+
+        .diagnostic {
+            margin-top: 12px;
+            padding: 10px;
+            border-radius: 7px;
+            background: #f3f6f9;
+            color: #475467;
+            font-size: 12px;
+            overflow-wrap: anywhere;
+            text-align: left;
         }
 
         .fraud .icon {
@@ -272,6 +291,7 @@
 
                     <div class="probability" id="probability">—</div>
                     <p>Estimated fraud probability</p>
+
                     <div class="bar">
                         <div class="fill" id="fill"></div>
                     </div>
@@ -280,9 +300,14 @@
                         <span>Decision threshold</span>
                         <strong id="threshold">Loaded after analysis</strong>
                     </div>
+
                     <div class="meta">
                         <span>Model</span>
                         <strong>Random Forest</strong>
+                    </div>
+
+                    <div class="diagnostic" id="diagnostic">
+                        Raw model probability will appear here after analysis.
                     </div>
                 </div>
             </section>
@@ -318,7 +343,6 @@
 
             if (name === "Amount") {
                 input.value = "100";
-                label.textContent = "Amount";
             }
 
             wrapper.append(label, input);
@@ -366,7 +390,16 @@
                 }
 
                 const isFraud = result.prediction === 1;
-                const probability = result.fraud_probability * 100;
+                const rawProbability = Number(result.fraud_probability);
+
+                if (!Number.isFinite(rawProbability) ||
+                    rawProbability < 0 || rawProbability > 1) {
+                    throw new Error("The API returned an invalid fraud probability.");
+                }
+
+                const probability = Number.isFinite(Number(result.fraud_percentage))
+                    ? Number(result.fraud_percentage)
+                    : rawProbability * 100;
 
                 document.getElementById("result").className =
                     `result ${isFraud ? "fraud" : "legitimate"}`;
@@ -378,11 +411,11 @@
 
                 document.getElementById("description").textContent =
                     isFraud
-                    ? "The model flagged this transaction for further review."
-                    : "The model did not flag this transaction at the selected threshold.";
+                        ? "The model flagged this transaction for further review."
+                        : "The model did not flag this transaction at the selected threshold.";
 
                 document.getElementById("probability").textContent =
-                    `${probability.toFixed(4)}%`;
+                    `${probability.toFixed(6)}%`;
 
                 document.getElementById("fill").style.width =
                     `${Math.max(0, Math.min(100, probability))}%`;
@@ -390,8 +423,17 @@
                 document.getElementById("fill").style.background =
                     isFraud ? "#d92d20" : "#187447";
 
+                const thresholdPercentage = Number.isFinite(Number(result.threshold_percentage))
+                    ? Number(result.threshold_percentage)
+                    : Number(result.threshold) * 100;
+
                 document.getElementById("threshold").textContent =
-                    `${(result.threshold * 100).toFixed(1)}%`;
+                    `${thresholdPercentage.toFixed(1)}%`;
+
+                document.getElementById("diagnostic").textContent =
+                    `Raw probability: ${rawProbability.toPrecision(12)} | ` +
+                    `Percentage: ${probability.toPrecision(12)}% | ` +
+                    `Threshold: ${thresholdPercentage.toFixed(2)}%`;
             } catch (err) {
                 error.textContent = err.message ||
                     "Could not connect to the prediction API.";
